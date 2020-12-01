@@ -18,6 +18,9 @@
             printf(type==IS_INT?"%d ":"%.2f ", matrix[i][j]); \
 })
 
+void init_start_node(node, int, int);
+void realloc_node_array(node *, int);
+
 typedef struct {
     int i, j;
     int parenti, parentj;
@@ -27,19 +30,19 @@ typedef struct {
 int matrix[N][N];
 float distances[N][N];
 float distances2[N][N];
-int epektaseis = 0;
+int extensions = 0;
 
 void next_bool(double pr) {
-    int c, v;
+    int i, j;
     int p_scaled;
 
-    for (c = 0; c < N; c++) {
-        for (v = 0; v < N; v++) {
+    for (i=0; i<N; i++) {
+        for (j=0; j<N; j++) {
             p_scaled = (int)((rand() % MAX) + 1);
             if (p_scaled > pr * ((int)MAX + 1))
-                matrix[c][v] = 1;
+                matrix[i][j] = 1;
             else
-                matrix[c][v] = 0;
+                matrix[i][j] = 0;
         }
     }
 }
@@ -50,272 +53,155 @@ float do_manhattan(int si, int sj, int gi, int gj) {
 
 float a_star(int matrix[N][N], float ap[N][N], int si, int sj, int fasti, int fastj) {
     node *open, *close;
+    int open_size, close_size, position, minf, i, j, open_flag, close_flag, open_position, close_position;
+    float total_cost;
+    node start_node, v_node, up, down, left, right, found, old, temp_parenti, temp_parentj;
 
+    open_size = 0;
+    close_size = 0;
     open = (node *)malloc((N * N) * sizeof(node));
     if (open == NULL) exit(1);
     close = (node *)malloc((N * N) * sizeof(node));
     if (close == NULL) exit(1);
-    float total_cost = 0;
 
-    int counto = 0, countc = 0;
-    node Start;
+    init_start_node(start_node, si, sj);
+    open[open_size++] = start_node;
 
-    Start.i = si;
-    Start.j = sj;
-    Start.parenti = si;
-    Start.parentj = sj;
-    Start.f = distances[si][sj];
-    open[counto++] = Start;
-
-    int z, q;
-    node up, down, left, right;
+    total_cost = 0;
 
     while (1) {
-        if (counto == 0) break;
-        node v = open[0];
-        int thesh = 0;
-        int minf = open[0].f;
-        if (counto > 1)
-            for (z = 1; z < counto; z++) {
-                if (open[z].f < minf) {
-                    minf = open[z].f;
-                    v = open[z];
-                    thesh = z;
+        if (open_size == 0) break;
+        v_node = open[0];
+        position = 0;
+        minf = open[0].f;
+        if (open_size > 1)
+            for (i=1; i<open_size; i++) {
+                if (open[i].f < minf) {
+                    minf = open[i].f;
+                    v_node = open[i];
+                    position = i;
                 }
             }
-        counto--;
+        open_size--;
 
-        for (q = 0; q < counto; q++)
-            if (q >= thesh)
-                open[q] = open[q + 1];
+        for (i=0; i<open_size; i++)
+            if (i >= position)
+                open[i] = open[i + 1];
 
-        open = (node *)realloc(open, counto * sizeof(node));
-        open = (node *)realloc(open, (N * N) * sizeof(node));
-        close[countc++] = v;
-        if (v.i == fasti && v.j == fastj) {
-            int h;
-            for (h = 0; h < countc; h++)
-                epektaseis += 1;
+        realloc_node_array(open, open_size);
+        close[close_size++] = v_node;
+        if (v_node.i == fasti && v_node.j == fastj) {
+            extensions = close_size;
 
-            int i, j;
-            int w;
-
-            matrix[v.parenti][v.parentj] = 7;
-            i = v.parenti;
-            j = v.parentj;
-            total_cost += v.f;
+            matrix[v_node.parenti][v_node.parentj] = 7;
+            temp_parenti = v_node.parenti;
+            temp_parentj = v_node.parentj;
+            total_cost += v_node.f;
             while (1) {
-                node found;
-                for (w = 0; w < countc; w++)
-                    if (close[w].i == i && close[w].j == j)
-                        found = close[w];
+                for (i = 0; i < close_size; i++)
+                    if (close[i].i == temp_parenti && close[i].j == temp_parentj)
+                        found = close[i];
 
-                i = found.parenti;
-                j = found.parentj;
+                temp_parenti = found.parenti;
+                temp_parentj = found.parentj;
                 total_cost += found.f;
-                if (i == si && j == sj) break;
+                if (temp_parenti == si && temp_parentj == sj) break;
                 matrix[found.parenti][found.parentj] = 7;
             }
             break;
         } else {
-            if (v.i != 0 && matrix[(v.i) - 1][v.j] != 1) {
-                int o = 0, cl = 0, k, q;
-                node old;
-                int tho, thc;
+            if (v_node.i != 0 && matrix[(v_node.i) - 1][v_node.j] != 1) {
+                open_flag = 0;
+                close_flag = 0;
 
-                up.i = (v.i) - 1;
-                up.j = (v.j);
-                up.parenti = v.i;
-                up.parentj = v.j;
-                up.f = do_manhattan(si, sj, ((v.i) - 1), (v.j)) + ap[(v.i) - 1][v.j];
+                up.i = (v_node.i) - 1;
+                up.j = (v_node.j);
+                up.parenti = v_node.i;
+                up.parentj = v_node.j;
+                up.f = do_manhattan(si, sj, ((v_node.i) - 1), (v_node.j)) + ap[(v_node.i) - 1][v_node.j];
 
-                for (k = 0; k < counto; k++) {
-                    if (open[k].i == up.i && open[k].j == up.j) {
-                        old = open[k];
-                        tho = k;
-                        o = 1;
-                    }
-                }
+                old = set_node(open, open_size, open_position, open_flag, up);
+                old = set_node(close, close_size, close_position, close_flag, up);
 
-                for (k = 0; k < countc; k++) {
-                    if (close[k].i == up.i && close[k].j == up.j) {
-                        old = close[k];
-                        thc = k;
-                        cl = 1;
-                    }
-                }
-
-                if (o == 0 && cl == 0)
-                    open[counto++] = up;
-                else
-                if (old.f > up.f) {
-                    if (o == 1) {
-                        counto--;
-                        for (q = 0; q < counto; q++)
-                            if (q >= tho)
-                                open[q] = open[q + 1];
-
-                        open = (node *)realloc(open, counto * sizeof(node));
-                        open = (node *)realloc(open, (N * N) * sizeof(node));
-                        open[counto++] = up;
-                    } else if (cl == 1) {
-                        countc--;
-                        for (q = 0; q < countc; q++)
-                            if (q >= thc)
-                                close[q] = close[q + 1];
-
-                        close = (node *)realloc(close, countc * sizeof(node));
-                        close = (node *)realloc(close, (N * N) * sizeof(node));
-                        open[counto++] = up;
-                    }
+                if (open_flag == 0 && close_flag == 0)
+                    open[open_size++] = up;
+                else if (old.f > up.f) {
+                    if (open_flag == 1)
+                      delete_element(open, open_size, open_position, up);
+                    else if (close_flag == 1)
+                      delete_element(close, close_size, close_position, up);
                 }
             }
 
-            if (v.i != N && matrix[(v.i) + 1][v.j] != 1) {
-                int o = 0, cl = 0, k, q;
-                int tho, thc;
-                node old;
+            if (v_node.i != N && matrix[(v_node.i) + 1][v_node.j] != 1) {
+                open_flag = 0;
+                close_flag = 0;
 
-                down.i = (v.i) + 1;
-                down.j = (v.j);
-                down.parenti = v.i;
-                down.parentj = v.j;
-                down.f = do_manhattan(si, sj, ((v.i) + 1), (v.j)) + ap[(v.i) + 1][v.j];
+                down.i = (v_node.i) + 1;
+                down.j = (v_node.j);
+                down.parenti = v_node.i;
+                down.parentj = v_node.j;
+                down.f = do_manhattan(si, sj, ((v_node.i) + 1), (v_node.j)) + ap[(v_node.i) + 1][v_node.j];
 
-                for (k = 0; k < counto; k++) {
-                    if (open[k].i == down.i && open[k].j == down.j) {
-                        old = open[k];
-                        tho = k;
-                        o = 1;
-                    }
-                }
+                old = set_node(open, open_size, open_position, open_flag, down);
+                old = set_node(close, close_size, close_position, close_flag, down);
 
-                for (k = 0; k < countc; k++) {
-                    if (close[k].i == down.i && close[k].j == down.j) {
-                        old = close[k];
-                        thc = k;
-                        cl = 1;
-                    }
-                }
-
-                if (o == 0 && cl == 0)
-                    open[counto++] = down;
+                if (open_flag == 0 && close_flag == 0)
+                    open[open_size++] = down;
                 else
                 if (old.f > down.f) {
-                    if (o == 1) {
-                        counto--;
-                        for (q = 0; q < counto; q++)
-                            if (q >= tho)
-                                open[q] = open[q + 1];
-
-                        open = (node *)realloc(open, counto * sizeof(node));
-                        open = (node *)realloc(open, (N * N) * sizeof(node));
-                        open[counto++] = down;
-                    } else if (cl == 1) {
-                        countc--;
-                        for (q = 0; q < countc; q++)
-                            if (q >= thc)
-                                close[q] = close[q + 1];
-
-                        close = (node *)realloc(close, countc * sizeof(node));
-                        close = (node *)realloc(close, (N * N) * sizeof(node));
-                        open[counto] = down;
-                        counto++;
-                    }
+                    if (open_flag == 1)
+                      delete_element(open, open_size, open_position, down);
+                    else if (close_flag == 1)
+                      delete_element(close, close_size, close_position, down);
                 }
             }
 
-            if (v.j != 0 && matrix[v.i][(v.j) - 1] != 1) {
-                int o = 0, cl = 0, k, q;
-                int tho, thc;
-                node old;
-                left.i = (v.i);
-                left.j = (v.j) - 1;
-                left.parenti = v.i;
-                left.parentj = v.j;
-                left.f = do_manhattan(si, sj, (v.i), ((v.j) - 1)) + ap[v.i][(v.j) - 1];
-                for (k = 0; k < counto; k++) {
-                    if (open[k].i == left.i && open[k].j == left.j) {
-                        old = open[k];
-                        tho = k;
-                        o = 1;
-                    }
-                }
-                for (k = 0; k < countc; k++) {
-                    if (close[k].i == left.i && close[k].j == left.j) {
-                        old = close[k];
-                        thc = k;
-                        cl = 1;
-                    }
-                }
-                if (o == 0 && cl == 0) {
-                    open[counto++] = left;
-                } else {
+            if (v_node.j != 0 && matrix[v_node.i][(v_node.j) - 1] != 1) {
+                open_flag = 0;
+                close_flag = 0;
+
+                left.i = (v_node.i);
+                left.j = (v_node.j) - 1;
+                left.parenti = v_node.i;
+                left.parentj = v_node.j;
+                left.f = do_manhattan(si, sj, (v_node.i), ((v_node.j) - 1)) + ap[v_node.i][(v_node.j) - 1];
+
+                old = set_node(open, open_size, open_position, open_flag, left);
+                old = set_node(close, close_size, close_position, close_flag, left);
+
+                if (open_flag == 0 && close_flag == 0)
+                    open[open_size++] = left;
+                else {
                     if (old.f > left.f) {
-                        if (o == 1) {
-                            counto--;
-                            for (q = 0; q < counto; q++)
-                                if (q >= tho)
-                                    open[q] = open[q + 1];
-                            open = (node *)realloc(open, counto * sizeof(node));
-                            open = (node *)realloc(open, (N * N) * sizeof(node));
-                            open[counto++] = left;
-                        } else if (cl == 1) {
-                            countc--;
-                            for (q = 0; q < countc; q++)
-                                if (q >= thc)
-                                    close[q] = close[q + 1];
-                            close = (node *)realloc(close, countc * sizeof(node));
-                            close = (node *)realloc(close, (N * N) * sizeof(node));
-                            open[counto++] = left;
-                        }
+                      if (open_flag == 1)
+                        delete_element(open, open_size, open_position, left);
+                      else if (close_flag == 1)
+                        delete_element(close, close_size, close_position, left);
                     }
                 }
             }
-            if (v.j != N && matrix[v.i][(v.j) + 1] != 1) {
-                int o = 0, cl = 0, k, q;
-                int tho, thc;
-                node old;
-                right.i = (v.i);
-                right.j = (v.j) + 1;
-                right.parenti = v.i;
-                right.parentj = v.j;
-                right.f = do_manhattan(si, sj, (v.i), ((v.j) + 1)) + ap[v.i][(v.j) + 1];
-                for (k = 0; k < counto; k++) {
-                    if (open[k].i == right.i && open[k].j == right.j) {
-                        old = open[k];
-                        tho = k;
-                        o = 1;
-                    }
-                }
-                for (k = 0; k < countc; k++) {
-                    if (close[k].i == right.i && close[k].j == right.j) {
-                        old = close[k];
-                        thc = k;
-                        cl = 1;
-                    }
-                }
-                if (o == 0 && cl == 0) {
-                    open[counto++] = right;
-                } else {
+            if (v_node.j != N && matrix[v_node.i][(v_node.j) + 1] != 1) {
+                open_flag = 0;
+                close_flag = 0;
+
+                right.i = (v_node.i);
+                right.j = (v_node.j) + 1;
+                right.parenti = v_node.i;
+                right.parentj = v_node.j;
+                right.f = do_manhattan(si, sj, (v_node.i), ((v_node.j) + 1)) + ap[v_node.i][(v_node.j) + 1];
+
+                old = set_node(open, open_size, open_position, open_flag, right);
+                old = set_node(close, close_size, close_position, close_flag, right);
+
+                if (open_flag == 0 && close_flag == 0)
+                    open[open_size++] = right;
+                else {
                     if (old.f > right.f) {
-                        if (o == 1) {
-                            counto--;
-                            for (q = 0; q < counto; q++)
-                                if (q >= tho)
-                                    open[q] = open[q + 1];
-                            open = (node *)realloc(open, counto * sizeof(node));
-                            open = (node *)realloc(open, (N * N) * sizeof(node));
-                            open[counto++] = right;
-                        } else if (cl == 1) {
-                            countc--;
-                            for (q = 0; q < countc; q++)
-                                if (q >= thc)
-                                    close[q] = close[q + 1];
-                            close = (node *)realloc(close, countc * sizeof(node));
-                            close = (node *)realloc(close, (N * N) * sizeof(node));
-                            open[counto++] = right;
-                        }
+                        if (open_flag == 1)
+                          delete_element(open, open_size, open_position, right);
+                        else if (close_flag == 1)
+                          delete_element(close, close_size, close_position, right);
                     }
                 }
             }
@@ -324,14 +210,46 @@ float a_star(int matrix[N][N], float ap[N][N], int si, int sj, int fasti, int fa
     return total_cost;
 }
 
+void init_start_node(node start_node, int si, int sj) {
+    start_node.i = si;
+    start_node.j = sj;
+    start_node.parenti = si;
+    start_node.parentj = sj;
+    start_node.f = distances[si][sj];
+}
+
+node set_node(node *array, int array_size, int array_position, int array_flag, node direction) {
+    int i;
+    node old;
+    for (i=0; i<uode_size; i++)
+        if (array[i].i == direction.i && array[i].j == direction.j) {
+            old = array[i];
+            array_position = i;
+            array_flag = 1;
+        }
+    return old;
+}
+
+void delete_node(node *array, int array_size, int array_position, node direction) {
+    int i;
+    array_size--;
+    for (i = 0; i < array_size; i++)
+        if (i >= array_position)
+            array[i] = array[i + 1];
+    realloc_node_array(array, array_size);
+    array[array_size++] = direction;
+}
+
+void realloc_node_array(node *array, size) {
+  array = (node *)realloc(array , size* sizeof(node));
+  array = (node *)realloc(array , (N * N) * sizeof(node));
+}
+
 int main() {
     srand(time(0));
     next_bool(p);
     char enter;
-    int i, j, k, l;
-    int si, sj;
-    int xi, xj;
-    int yi, yj;
+    int i, j, k, l, si, sj, xi, xj, yi, yj;
     float cost1, cost2;
 
     printf("~~MATRIX~~\n");
@@ -383,23 +301,23 @@ int main() {
         lastj = yj;
     }
 
-    for (k = 0; k < N; k++)
-        for (l = 0; l < N; l++)
-            distances[k][l] = do_manhattan(k, l, fasti, fastj);
+    for (i=0; i<N; i++)
+        for (j=0; j<N; j++)
+            distances[i][j] = do_manhattan(i, j, fasti, fastj);
 
     print_matrix(distances, IS_FLOAT);
     cost1 = a_star(matrix, distances, si, sj, fasti, fastj);
     print_matrix(matrix, IS_INT);
     printf("cost1: %f\n", cost1);
-    printf("epektaseis 1h fora: %d\n", epektaseis);
-    for (k = 0; k < N; k++)
-        for (l = 0; l < N; l++)
-            distances2[k][l] = do_manhattan(k, l, lasti, lastj);
+    printf("epektaseis 1h fora: %d\n", extensions);
+    for (i=0; i<N; i++)
+        for (j=0; j<N; j++)
+            distances2[i][j] = do_manhattan(i, j, lasti, lastj);
     print_matrix(distances2, IS_FLOAT);
     cost2 = a_star(matrix, distances2, fasti, fastj, lasti, lastj);
     print_matrix(matrix, IS_INT);
     printf("cost2: %f\n", cost2);
     printf("total cost: %f\n", cost1 + cost2);
-    printf("sunolikes epektaseis pou eginan: %d\n", epektaseis);
+    printf("sunolikes epektaseis pou eginan: %d\n", extensions);
     return 0;
 }
