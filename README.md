@@ -1,6 +1,6 @@
 # robot-labyrith-a-star
 
-## Πλοήγηση ρομπότ σε λαβύρινθο
+## Robot navigation in a maze.
 Τεχνητή Νοημοσύνη - Άσκηση 1
 
 ### /files
