@@ -5,3 +5,6 @@
 
 ### /files
 Assignment 1
+
+### Installation
+make install
