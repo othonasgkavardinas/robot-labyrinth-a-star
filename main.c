@@ -45,7 +45,7 @@ int main() {
     cost1 = a_star(matrix, distances, s, fast, &extensions);
 
     print_matrix(matrix, IS_INT);
-    printf("cost1: %f\n", cost1);
+    printf("cost1: %.2f\n", cost1);
     printf("first extensions: %d\n", extensions);
 
     calculate_distances(distances2, last);
@@ -53,8 +53,8 @@ int main() {
     print_matrix(distances2, IS_FLOAT);
     cost2 = a_star(matrix, distances2, fast, last, &extensions);
     print_matrix(matrix, IS_INT);
-    printf("cost2: %f\n", cost2);
-    printf("total cost: %f\n", cost1 + cost2);
+    printf("cost2: %.2f\n", cost2);
+    printf("total cost: %.2f\n", cost1 + cost2);
     printf("total extensions: %d\n", extensions);
 
     return 0;

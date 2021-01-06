@@ -15,7 +15,7 @@ void remove_node_from_list(node *, int);
 void realloc_node_array(node **, int, int *);
 void set_temp_parent_and_total_cost(vector *, node, float *);
 float do_manhattan(vector, vector);
-char vector_exists_in_set(vector, node *, int);
+char vector_exists_in_list(vector, node *, int);
 int cmp(const void *, const void *);
 
 float a_star(int matrix[][N], float dists[][N], vector s, vector goal, int *extensions) {
@@ -32,11 +32,11 @@ float a_star(int matrix[][N], float dists[][N], vector s, vector goal, int *exte
     alloc_nodes(&open, &close);
     init_start_node(&(open[open_size++]), s, dists);
 
-    while (open_size!=0) {
+    while (open_size>=0) {
         copy_node_from(&min_node, &(open[0]));
         remove_node_from_list(open, open_size--);
-        
-        if(vector_exists_in_set(min_node.v, close, close_size))
+
+        if(vector_exists_in_list(min_node.v, close, close_size))
             continue;
 
         if (equals_vector(min_node.v, goal)) {
@@ -58,10 +58,10 @@ float a_star(int matrix[][N], float dists[][N], vector s, vector goal, int *exte
         }
 
         set_int_array(conditions, conditions_size,
-            min_node.v[0] != 0 && matrix[(min_node.v[0]) - 1][min_node.v[1]] == 0,
-            min_node.v[0] != N && matrix[(min_node.v[0]) + 1][min_node.v[1]] == 0,
-            min_node.v[1] != 0 && matrix[min_node.v[0]][(min_node.v[1]) - 1] == 0,
-            min_node.v[1] != N && matrix[min_node.v[0]][(min_node.v[1]) + 1] == 0);
+            min_node.v[0] != 0 && matrix[(min_node.v[0]) - 1][min_node.v[1]] != 1,
+            min_node.v[0] != N && matrix[(min_node.v[0]) + 1][min_node.v[1]] != 1,
+            min_node.v[1] != 0 && matrix[min_node.v[0]][(min_node.v[1]) - 1] != 1,
+            min_node.v[1] != N && matrix[min_node.v[0]][(min_node.v[1]) + 1] != 1);
         set_vector_array_from_pairs(direction_vectors, conditions_size,
             min_node.v[0]-1, min_node.v[1],
             min_node.v[0]+1, min_node.v[1],
@@ -122,18 +122,20 @@ void set_temp_parent_and_total_cost(vector *temp_parent, node n, float *total_co
     *total_cost += n.f;
 }
 
-float do_manhattan(vector s, vector g) {
-    return (1 * abs(g[0] - s[0])) + ((0.5) * abs(g[1] - s[1]));
+float do_manhattan(vector x, vector y) {
+    return abs(x[0] - y[0]) + abs(x[1] - y[1]);
 }
 
-char vector_exists_in_set(vector v, node *set, int size) {
-        int i;
-        for(i=0; i<size; i++)
-            if(equals_vector(v, set[i].v))
-                return 1;
-        return 0;
+char vector_exists_in_list(vector v, node *set, int size) {
+    int i;
+    for(i=0; i<size; i++)
+        if(equals_vector(v, set[i].v))
+            return 1;
+    return 0;
 }
 
 int cmp(const void *a, const void *b) {
-    return ((node *)a)->f - ((node *)b)->f;
+  float fa = ((node *)a)->f;
+  float fb = ((node *)b)->f;
+  return (fa > fb) - (fa < fb);
 }
