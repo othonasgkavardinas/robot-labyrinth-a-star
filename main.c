@@ -1,4 +1,4 @@
-#include "a_star.h"
+#include "a_star.c"
 
 void create_matrix_with_boundaries(int [][N]);
 void print_options(int [][N]);
@@ -30,12 +30,12 @@ int main() {
     if(do_manhattan(s, x) > do_manhattan(s, y)) {
         copy_vector_from(&fast, &y);
         copy_vector_from(&last, &x);
-        puts("We will start with Y");
+        puts("First goal is Y");
     } else {
         if(do_manhattan(s, x) < do_manhattan(s, y))
-            puts("We will start with X");
+            puts("First goal is X");
         else
-            puts("X and Y have equal distance, we will start with X");
+            puts("Distance of X and Y is equal, first goal is X");
         copy_vector_from(&fast, &x);
         copy_vector_from(&last, &y);
     }
@@ -107,7 +107,8 @@ void calculate_distances(float distances[][N], vector vec) {
     int i, j;
     for (i=0; i<N; i++)
         for (j=0; j<N; j++) {
-            temp_vector[0] = i; temp_vector[1] = j;
+            temp_vector[0] = i;
+            temp_vector[1] = j;
             distances[i][j] = do_manhattan(temp_vector, vec);
         }
 }
