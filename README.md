@@ -10,5 +10,5 @@ Assignment and an example of use.
 make install
 
 ### Tested on
-gcc 10.2.0
+gcc 10.2.0  
 GNU Make 4.3
