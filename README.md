@@ -8,3 +8,7 @@ Assignment and an example of use.
 
 ### Installation
 make install
+
+### Tested on
+gcc 10.2.0
+GNU Make 4.3
